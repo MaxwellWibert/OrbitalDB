@@ -137,5 +137,21 @@ class TLE:
     def speed_apo(self):
         return math.sqrt(2*self.KE_apo())
 
+    #calculating approximate true_anomaly from fourier expansion over mean anomaly with O(e^4) error
+    def true_anomaly(self):
+        MA = self.mean_anomaly
+        E = self.eccentricity
+
+        return (ma + (2*E -(E**3)/4)*math.sin(ma) + (5/4)*(E**2)*math.sin(2*ma) + (13/12)*(E**3)*math.sin(3*ma))
+
+    #current distance from center of earth
+    def radius(self): 
+        e = self.eccentricity
+        a = self.a()
+        n = self.true_anomaly()
+
+        return a * (1 - e**2)/(1+ e*math.cos(n))
     
+    def height(self):
+        return self.radius() - R_E
 #class ends here
