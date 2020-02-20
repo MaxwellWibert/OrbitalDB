@@ -1,34 +1,21 @@
+import math
+#physical/pathematical constants
+
+MU = 3.986004418 * (10**14) #earth gravitational parameter
+PI = math.pi #circle constant
+#
+R_E = 6378000 #radius of earth in meters
+
 def parse_float(s):
     return float(s[0] + '.' + s[1:6] + 'e' + s[6:8])
 def parse_dec(s):
     return float('.' + s)
 class TLE:
     #dictionary for passing in default arguments to kwargs for __init__ method.
-    default_params = {
-        name: "", 
-        sat_num : 0,
-        classification: "U",
-        id_year: 0,
-        id_launch: 0,
-        id_piece: A,
-        epoch_year: 0,
-        epoch: 0,
-        mean_motion_p: 0,
-        mean_motion_pp: 0,
-        BSTAR: 0,
-        element_num: 0,
-        satellite_num: 0,
-        inclination: 0,
-        RAAD: 0,
-        eccentricity: 0,
-        arg_perigee: 0,
-        mean_anomaly: 0,
-        mean_motion: 0,
-        rev_num: 0)
-    }
+
     """ creates single TLE object, meant to represent a single observation of a satellite with relevant information about the time of observation,
     the satellite's origins and orbital characteristics"""
-    __init__(self, *ignore,**kwargs = default_params)
+    def __init__(self, *ignore,**kwargs):
         for k,v in kwargs.items():
             setattr(self, k, v)
 
@@ -53,12 +40,12 @@ class TLE:
         self.mean_motion_p = float(self.mean_motion_p)
         self.mean_motion_pp = parse_float(mean_motion_pp)
         
-        self.BSTAR = parse_float(self.BSTAR)
+        self.bstar = parse_float(self.bstar)
 
         self.element_num = int(self.element_num)
 
         self.inclination = float(self.inclination)
-        self.RAAD = float(self.RAAD)
+        self.raad = float(self.raad)
         self.eccentricity = parse_dec(self.eccentricity)
         self.arg_perigee = float(self.arg_perigee)
         self.mean_anomaly = float(self.mean_anomaly)
@@ -75,7 +62,7 @@ class TLE:
             lines = io.readlines()
             io.close()
         line_bunches = [lines[i:i+2] for i in range(0, len(lines), 3)]
-        return map(lambda bunch: cls.parse_tle(bunch),line_bunches)
+        return map(lambda bunch: cls.parse_tle(bunch[0], bunch[1], bunch[2]),line_bunches)
 
 
     
@@ -97,18 +84,58 @@ class TLE:
             epoch: line1[20:31],
             mean_motion_p: line1[33:42],
             mean_motion_pp: line1[44:51],
-            BSTAR: line1[53:60],
+            bstar: line1[53:60],
             element_num: line1[64:67],
             #line 2 params
             inclination: line2[8:15],
-            RAAD: line2[17:24],
+            raad: line2[17:24],
             eccentricity: line2[26:32],
             arg_perigee: line2[34:41],
             mean_anomaly: line2[43:50],
-            mean_motion: line2[52:62],
+            mean_motion: line2[52:62], # in rotations per day
             rev_num: line2[63:67]
-        }
+                }
 
         return TLE(params)
+    
+    #calculated parameters
+    
+    def period(self):  # length of time to revolve around earth once (in days)
+        return 1/self.mean_motion
+  
+    def a(self):  # length of semi-major axis
+        return math.pow(MU*(self.period()/(2*pi))**2,1/3)
+    
+    def r_peri(self):  # smallest (perigee) distance from center of earth
+        return (1-self.eccentricity)*self.a()
+    
+    def r_apo(self):  # largest (apogee) distance from center of earth
+        return (1 + self.eccentricity)*self.a()
+    
+    def h_peri(self):  # smallest (perigee) height from earth surface
+        return self.r_peri() + R_E
+    
+    def h_apo(self):  # biggest (apogee) height from earthe surface
+        return self.r_apo() + R_E
+    
+    def energy(self):
+        return -MU/(2*self.a())
+    
+    def PE_peri(self):
+        return -MU/self.r_peri()
+    
+    def PE_apo(self):
+        return -MU/self.r_apo()
+    
+    def KE_peri(self):
+        return self.energy() - self.PE_peri()
+    def KE_apo(self):
+        return self.energy() - self.PE_apo()
+    
+    def speed_peri(self):
+        return math.sqrt(2*self.KE_peri())
+    def speed_apo(self):
+        return math.sqrt(2*self.KE_apo())
 
     
+#class ends here
