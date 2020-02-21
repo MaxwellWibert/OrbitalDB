@@ -71,6 +71,7 @@ class TLE:
     #returns: TLE instance with params determined by tle lines
     @classmethod
     def parse_tle(cls, line0, line1, line2):
+        print('parsing:\n', line0, '\n', line1, '\n', line2)
         params = {
             #line 0 is just the name of the satellite
             name: line0,
@@ -154,4 +155,10 @@ class TLE:
     
     def height(self):
         return self.radius() - R_E
+    
+
 #class ends here
+line0 = "IRIDIUM 33"
+line1 = "1 24946U 97051C 20051.53657729 .00000083 00000-0 22736-4 0 9994" 
+line2 = "2 24946 86.3857 237.2037 0006065 304.3927 55.6695 14.33674051174195"
+TLE.parse_tle(line0,line1, line2)
